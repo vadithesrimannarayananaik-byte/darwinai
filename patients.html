@@ -73,6 +73,10 @@ async function loadPatients(){
 
                 <p>Disease: ${patient.disease}</p>
 
+                <button onclick="deletePatient(${patient.id})">
+                    Delete
+                </button>
+
             </div>
         `;
 
@@ -85,6 +89,28 @@ async function loadPatients(){
 }
 
 loadPatients();
+
+async function deletePatient(id){
+
+    const { error } =
+    await client
+    .from('patients')
+    .delete()
+    .eq('id', id);
+
+    if(error){
+
+        alert('Error deleting patient');
+
+    } else {
+
+        alert('Patient deleted');
+
+        loadPatients();
+
+    }
+
+}
 
 document
 .getElementById('patientForm')
@@ -129,4 +155,4 @@ document
 </script>
 
 </body>
-</html>
+</html>            
