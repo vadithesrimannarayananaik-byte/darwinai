@@ -33,6 +33,12 @@
 
 </form>
 
+<hr>
+
+<h2>Trial List</h2>
+
+<div id="trialsList"></div>
+
 <script>
 
 const supabaseUrl =
@@ -46,6 +52,39 @@ supabase.createClient(
     supabaseUrl,
     supabaseKey
 );
+
+async function loadTrials(){
+
+    const { data: trials } =
+    await client
+    .from('clinical_trials')
+    .select('*');
+
+    let html = '';
+
+    trials.forEach(trial => {
+
+        html += `
+            <div class="card">
+
+                <h3>${trial.trial_name}</h3>
+
+                <p>Disease: ${trial.disease}</p>
+
+                <p>Location: ${trial.location}</p>
+
+            </div>
+        `;
+
+    });
+
+    document
+    .getElementById('trialsList')
+    .innerHTML = html;
+
+}
+
+loadTrials();
 
 document
 .getElementById('trialForm')
@@ -77,11 +116,11 @@ document
 
         alert('Error adding trial');
 
-        console.log(error);
-
     } else {
 
         alert('Trial added successfully');
+
+        loadTrials();
 
     }
 
