@@ -2,7 +2,10 @@
 <html>
 <head>
     <title>Clinical Trials - DarwinAI</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
 
@@ -15,18 +18,76 @@
 
 <h1>🧪 Clinical Trials</h1>
 
-<form>
+<form id="trialForm">
+
     <label>Trial Name</label><br>
-    <input type="text"><br><br>
+    <input type="text" id="trial_name"><br><br>
 
     <label>Disease</label><br>
-    <input type="text"><br><br>
+    <input type="text" id="disease"><br><br>
 
     <label>Location</label><br>
-    <input type="text"><br><br>
+    <input type="text" id="location"><br><br>
 
     <button type="submit">Add Trial</button>
+
 </form>
+
+<script>
+
+const supabaseUrl =
+'https://owvnrbtlouluskgasjxd.supabase.co';
+
+const supabaseKey =
+'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+
+const client =
+supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+);
+
+document
+.getElementById('trialForm')
+.addEventListener('submit', async (e) => {
+
+    e.preventDefault();
+
+    const trial_name =
+    document.getElementById('trial_name').value;
+
+    const disease =
+    document.getElementById('disease').value;
+
+    const location =
+    document.getElementById('location').value;
+
+    const { data, error } =
+    await client
+    .from('clinical_trials')
+    .insert([
+        {
+            trial_name: trial_name,
+            disease: disease,
+            location: location
+        }
+    ]);
+
+    if(error){
+
+        alert('Error adding trial');
+
+        console.log(error);
+
+    } else {
+
+        alert('Trial added successfully');
+
+    }
+
+});
+
+</script>
 
 </body>
 </html>
