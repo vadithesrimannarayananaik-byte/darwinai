@@ -127,7 +127,7 @@ document
     const disease =
     document.getElementById('disease').value;
 
-    const { data, error } =
+    const { error } =
     await client
     .from('patients')
     .insert([
@@ -155,4 +155,4 @@ document
 </script>
 
 </body>
-</html>            
+</html>
