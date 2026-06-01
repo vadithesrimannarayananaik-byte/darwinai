@@ -2,7 +2,10 @@
 <html>
 <head>
     <title>Match Results - DarwinAI</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
 
@@ -15,19 +18,77 @@
 
 <h1>🎯 Match Results</h1>
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Patient</th>
-        <th>Trial</th>
-        <th>Score</th>
-    </tr>
+<div id="results"></div>
 
-    <tr>
-        <td>Rahul Kumar</td>
-        <td>Diabetes Trial Phase 2</td>
-        <td>100</td>
-    </tr>
-</table>
+<script>
+
+const supabaseUrl =
+'https://owvnrbtlouluskgasjxd.supabase.co';
+
+const supabaseKey =
+'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+
+const client =
+supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+);
+
+async function loadMatches(){
+
+    const { data: patients } =
+    await client
+    .from('patients')
+    .select('*');
+
+    const { data: trials } =
+    await client
+    .from('clinical_trials')
+    .select('*');
+
+    let html = '';
+
+    patients.forEach(patient => {
+
+        trials.forEach(trial => {
+
+            if(patient.disease === trial.disease){
+
+                html += `
+                    <div class="card">
+
+                        <h3>
+                            ${patient.name}
+                        </h3>
+
+                        <p>
+                            Matched with:
+                            ${trial.trial_name}
+                        </p>
+
+                        <p>
+                            Disease:
+                            ${patient.disease}
+                        </p>
+
+                    </div>
+                `;
+
+            }
+
+        });
+
+    });
+
+    document
+    .getElementById('results')
+    .innerHTML = html;
+
+}
+
+loadMatches();
+
+</script>
 
 </body>
 </html>
