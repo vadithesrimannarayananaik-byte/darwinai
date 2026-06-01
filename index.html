@@ -2,7 +2,10 @@
 <html>
 <head>
     <title>DarwinAI Dashboard</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
 
@@ -14,27 +17,94 @@
 </nav>
 
 <h1>🧬 DarwinAI</h1>
-<p>AI-Powered Clinical Trial Matching Platform</p>
+
+<p>
+AI-Powered Clinical Trial Matching Platform
+</p>
 
 <div class="card">
-    <h3>Patients</h3>
-    <p>3</p>
+
+    <h3>Total Patients</h3>
+
+    <p id="patientsCount">0</p>
+
 </div>
 
 <div class="card">
-    <h3>Clinical Trials</h3>
-    <p>3</p>
+
+    <h3>Total Trials</h3>
+
+    <p id="trialsCount">0</p>
+
 </div>
 
 <div class="card">
-    <h3>Matches</h3>
-    <p>6</p>
+
+    <h3>Total Matches</h3>
+
+    <p id="matchesCount">0</p>
+
 </div>
 
-<div class="card">
-    <h3>Companies</h3>
-    <p>1</p>
-</div>
+<script>
+
+const supabaseUrl =
+'https://owvnrbtlouluskgasjxd.supabase.co';
+
+const supabaseKey =
+'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+
+const client =
+supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+);
+
+async function loadDashboard(){
+
+    const { data: patients } =
+    await client
+    .from('patients')
+    .select('*');
+
+    const { data: trials } =
+    await client
+    .from('clinical_trials')
+    .select('*');
+
+    let matches = 0;
+
+    patients.forEach(patient => {
+
+        trials.forEach(trial => {
+
+            if(patient.disease === trial.disease){
+
+                matches++;
+
+            }
+
+        });
+
+    });
+
+    document
+    .getElementById('patientsCount')
+    .innerText = patients.length;
+
+    document
+    .getElementById('trialsCount')
+    .innerText = trials.length;
+
+    document
+    .getElementById('matchesCount')
+    .innerText = matches;
+
+}
+
+loadDashboard();
+
+</script>
 
 </body>
-</html> 
+</html>
