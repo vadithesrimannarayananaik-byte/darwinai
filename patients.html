@@ -33,16 +33,58 @@
 
 </form>
 
+<hr>
+
+<h2>Patient List</h2>
+
+<div id="patientsList"></div>
+
 <script>
 
-const supabaseUrl = 'https://owvnrbtlouluskgasjxd.supabase.co';
+const supabaseUrl =
+'https://owvnrbtlouluskgasjxd.supabase.co';
 
-const supabaseKey = 'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+const supabaseKey =
+'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
 
-const client = supabase.createClient(
+const client =
+supabase.createClient(
     supabaseUrl,
     supabaseKey
 );
+
+async function loadPatients(){
+
+    const { data: patients } =
+    await client
+    .from('patients')
+    .select('*');
+
+    let html = '';
+
+    patients.forEach(patient => {
+
+        html += `
+            <div class="card">
+
+                <h3>${patient.name}</h3>
+
+                <p>Age: ${patient.age}</p>
+
+                <p>Disease: ${patient.disease}</p>
+
+            </div>
+        `;
+
+    });
+
+    document
+    .getElementById('patientsList')
+    .innerHTML = html;
+
+}
+
+loadPatients();
 
 document
 .getElementById('patientForm')
@@ -51,34 +93,34 @@ document
     e.preventDefault();
 
     const name =
-        document.getElementById('name').value;
+    document.getElementById('name').value;
 
     const age =
-        document.getElementById('age').value;
+    document.getElementById('age').value;
 
     const disease =
-        document.getElementById('disease').value;
+    document.getElementById('disease').value;
 
     const { data, error } =
-        await client
-        .from('patients')
-        .insert([
-            {
-                name: name,
-                age: age,
-                disease: disease
-            }
-        ]);
+    await client
+    .from('patients')
+    .insert([
+        {
+            name: name,
+            age: age,
+            disease: disease
+        }
+    ]);
 
     if(error){
 
         alert('Error adding patient');
 
-        console.log(error);
-
     } else {
 
         alert('Patient added successfully');
+
+        loadPatients();
 
     }
 
