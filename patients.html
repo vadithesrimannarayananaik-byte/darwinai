@@ -2,7 +2,10 @@
 <html>
 <head>
     <title>Patients - DarwinAI</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
 
@@ -15,18 +18,73 @@
 
 <h1>👤 Patients</h1>
 
-<form>
+<form id="patientForm">
+
     <label>Name</label><br>
-    <input type="text"><br><br>
+    <input type="text" id="name"><br><br>
 
     <label>Age</label><br>
-    <input type="number"><br><br>
+    <input type="number" id="age"><br><br>
 
     <label>Disease</label><br>
-    <input type="text"><br><br>
+    <input type="text" id="disease"><br><br>
 
     <button type="submit">Add Patient</button>
+
 </form>
+
+<script>
+
+const supabaseUrl = 'https://owvnrbtlouluskgasjxd.supabase.co';
+
+const supabaseKey = 'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+
+const client = supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+);
+
+document
+.getElementById('patientForm')
+.addEventListener('submit', async (e) => {
+
+    e.preventDefault();
+
+    const name =
+        document.getElementById('name').value;
+
+    const age =
+        document.getElementById('age').value;
+
+    const disease =
+        document.getElementById('disease').value;
+
+    const { data, error } =
+        await client
+        .from('patients')
+        .insert([
+            {
+                name: name,
+                age: age,
+                disease: disease
+            }
+        ]);
+
+    if(error){
+
+        alert('Error adding patient');
+
+        console.log(error);
+
+    } else {
+
+        alert('Patient added successfully');
+
+    }
+
+});
+
+</script>
 
 </body>
 </html>
