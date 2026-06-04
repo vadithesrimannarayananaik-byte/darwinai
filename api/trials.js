@@ -5,12 +5,12 @@ export default async function handler(req, res) {
   try {
 
     const response = await fetch(
-      `https://clinicaltrials.gov/api/query/full_studies?expr=${encodeURIComponent(disease)}&min_rnk=1&max_rnk=5&fmt=json`
+      `https://clinicaltrials.gov/api/query/studies?query.term=${encodeURIComponent(disease)}&pageSize=5`
     );
 
-    const data = await response.json();
+    const text = await response.text();
 
-    res.status(200).json(data);
+    res.status(200).send(text);
 
   } catch (error) {
 
