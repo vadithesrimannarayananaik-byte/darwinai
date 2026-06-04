@@ -2,9 +2,7 @@
 <html>
 <head>
     <title>Clinical Trials - DarwinAI</title>
-
     <link rel="stylesheet" href="style.css">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
@@ -18,8 +16,8 @@
 
 <h1>🧪 Clinical Trials</h1>
 
+<!-- Manual Add Form -->
 <form id="trialForm">
-
     <label>Trial Name</label><br>
     <input type="text" id="trial_name"><br><br>
 
@@ -30,102 +28,129 @@
     <input type="text" id="location"><br><br>
 
     <button type="submit">Add Trial</button>
-
 </form>
 
 <hr>
 
-<h2>Trial List</h2>
+<!-- ClinicalTrials.gov Search -->
+<h2>🔍 Search ClinicalTrials.gov</h2>
+<input type="text" id="searchDisease" placeholder="Enter disease (e.g. diabetes)">
+<button onclick="searchTrials()">Search</button>
+<div id="searchResults"></div>
 
+<hr>
+
+<h2>📋 My Trial List</h2>
 <div id="trialsList"></div>
 
 <script>
+const supabaseUrl = 'https://owvnrbtlouluskgasjxd.supabase.co';
+const supabaseKey = 'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+const client = supabase.createClient(supabaseUrl, supabaseKey);
 
-const supabaseUrl =
-'https://owvnrbtlouluskgasjxd.supabase.co';
+// ✅ Search ClinicalTrials.gov directly
+async function searchTrials() {
+    const disease = document.getElementById('searchDisease').value || 'diabetes';
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '<p>Loading...</p>';
 
-const supabaseKey =
-'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+    try {
+        const url = `https://clinicaltrials.gov/api/v2/studies?query.term=${encodeURIComponent(disease)}&pageSize=5`;
+        const response = await fetch(url, {
+            headers: { "Accept": "application/json" }
+        });
 
-const client =
-supabase.createClient(
-    supabaseUrl,
-    supabaseKey
-);
+        if (!response.ok) {
+            resultsDiv.innerHTML = `<p style="color:red">Error: ${response.status}</p>`;
+            return;
+        }
 
-async function loadTrials(){
+        const data = await response.json();
+        const studies = data.studies || [];
 
-    const { data: trials } =
-    await client
-    .from('clinical_trials')
-    .select('*');
+        if (studies.length === 0) {
+            resultsDiv.innerHTML = '<p>No trials found.</p>';
+            return;
+        }
+
+        let html = '';
+        studies.forEach(study => {
+            const info = study.protocolSection?.identificationModule;
+            const status = study.protocolSection?.statusModule;
+            html += `
+                <div class="card">
+                    <h3>${info?.briefTitle || 'No Title'}</h3>
+                    <p>Status: ${status?.overallStatus || 'Unknown'}</p>
+                    <p>ID: ${info?.nctId || 'N/A'}</p>
+                    <button onclick="saveToSupabase('${(info?.briefTitle || '').replace(/'/g, '')}', '${disease}')">
+                        + Save to My Trials
+                    </button>
+                </div>
+            `;
+        });
+
+        resultsDiv.innerHTML = html;
+
+    } catch (err) {
+        resultsDiv.innerHTML = `<p style="color:red">Failed: ${err.message}</p>`;
+    }
+}
+
+// ✅ Save a searched trial to Supabase
+async function saveToSupabase(trialName, disease) {
+    const { error } = await client
+        .from('clinical_trials')
+        .insert([{ trial_name: trialName, disease: disease, location: 'N/A' }]);
+
+    if (error) {
+        alert('Error saving trial');
+    } else {
+        alert('Trial saved!');
+        loadTrials();
+    }
+}
+
+// ✅ Load trials from Supabase
+async function loadTrials() {
+    const { data: trials } = await client
+        .from('clinical_trials')
+        .select('*');
 
     let html = '';
-
     trials.forEach(trial => {
-
         html += `
             <div class="card">
-
                 <h3>${trial.trial_name}</h3>
-
                 <p>Disease: ${trial.disease}</p>
-
                 <p>Location: ${trial.location}</p>
-
             </div>
         `;
-
     });
 
-    document
-    .getElementById('trialsList')
-    .innerHTML = html;
-
+    document.getElementById('trialsList').innerHTML = html;
 }
 
 loadTrials();
 
-document
-.getElementById('trialForm')
-.addEventListener('submit', async (e) => {
-
+// ✅ Manual add form
+document.getElementById('trialForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const trial_name =
-    document.getElementById('trial_name').value;
+    const trial_name = document.getElementById('trial_name').value;
+    const disease = document.getElementById('disease').value;
+    const location = document.getElementById('location').value;
 
-    const disease =
-    document.getElementById('disease').value;
+    const { error } = await client
+        .from('clinical_trials')
+        .insert([{ trial_name, disease, location }]);
 
-    const location =
-    document.getElementById('location').value;
-
-    const { error } =
-    await client
-    .from('clinical_trials')
-    .insert([
-        {
-            trial_name: trial_name,
-            disease: disease,
-            location: location
-        }
-    ]);
-
-    if(error){
-
+    if (error) {
         alert('Error adding trial');
-
     } else {
-
         alert('Trial added successfully');
-
         loadTrials();
-
     }
-
 });
-
 </script>
 
 </body>
