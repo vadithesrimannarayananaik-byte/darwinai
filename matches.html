@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Match Results - DarwinAI</title>
-
+    <title>AI Matches - DarwinAI</title>
     <link rel="stylesheet" href="style.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
 
@@ -16,75 +13,64 @@
     <a href="matches.html">Matches</a>
 </nav>
 
-<h1>🎯 Match Results</h1>
+<h1>🧠 AI Trial Matching</h1>
+
+<input type="text" id="patientDisease" placeholder="Enter patient disease">
+<button onclick="findMatches()">Find Matches</button>
 
 <div id="results"></div>
 
 <script>
 
-const supabaseUrl =
-'https://owvnrbtlouluskgasjxd.supabase.co';
+const trialDatabase = [
+    {
+        title: "Type 2 Diabetes Treatment Study",
+        disease: "diabetes"
+    },
+    {
+        title: "Cancer Immunotherapy Trial",
+        disease: "cancer"
+    },
+    {
+        title: "Heart Disease Prevention Study",
+        disease: "heart disease"
+    }
+];
 
-const supabaseKey =
-'sb_publishable_yoSS1S5amSn7oOL7sEx-mA_-LjZMrIU';
+function findMatches() {
 
-const client =
-supabase.createClient(
-    supabaseUrl,
-    supabaseKey
-);
+    const patientDisease =
+        document.getElementById("patientDisease")
+        .value
+        .toLowerCase();
 
-async function loadMatches(){
+    let html = "";
 
-    const { data: patients } =
-    await client
-    .from('patients')
-    .select('*');
+    trialDatabase.forEach(trial => {
 
-    const { data: trials } =
-    await client
-    .from('clinical_trials')
-    .select('*');
+        let score = 0;
 
-    let html = '';
+        if (
+            patientDisease.includes(trial.disease)
+            ||
+            trial.disease.includes(patientDisease)
+        ) {
+            score = 95;
+        } else {
+            score = 20;
+        }
 
-    patients.forEach(patient => {
-
-        trials.forEach(trial => {
-
-            if(patient.disease === trial.disease){
-
-                html += `
-                    <div class="card">
-
-                        <h3>${patient.name}</h3>
-
-                        <p>
-                            Matched with:
-                            ${trial.trial_name}
-                        </p>
-
-                        <p>
-                            Disease:
-                            ${patient.disease}
-                        </p>
-
-                    </div>
-                `;
-
-            }
-
-        });
-
+        html += `
+            <div class="card">
+                <h3>${trial.title}</h3>
+                <p><strong>Disease:</strong> ${trial.disease}</p>
+                <p><strong>AI Match Score:</strong> ${score}%</p>
+            </div>
+        `;
     });
 
-    document
-    .getElementById('results')
-    .innerHTML = html;
-
+    document.getElementById("results").innerHTML = html;
 }
-
-loadMatches();
 
 </script>
 
