@@ -2,18 +2,27 @@
 
 <script>
 
-const supabaseUrl = 'https://owvnrbtlouluskgasjxd.supabase.co';
+const supabaseUrl =
+'https://owvnrbtlouluskgasjxd.supabase.co';
 
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabaseKey =
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dm5yYnRsb3VsdXNrZ2FzanhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNTEzNjEsImV4cCI6MjA5NTcyNzM2MX0.KTuq3MheoImV-9xsPmcMxa-EPn0dGS_MWpVqwejxTRs';
 
-const client = supabase.createClient(
+const client =
+supabase.createClient(
     supabaseUrl,
     supabaseKey
 );
 
-async function saveMatch(title, nctId, score, disease) {
+async function saveMatch(
+    title,
+    nctId,
+    score,
+    disease
+) {
 
-    const { error } = await client
+    const { error } =
+        await client
         .from('matches')
         .insert([{
             trial_title: title,
@@ -24,11 +33,15 @@ async function saveMatch(title, nctId, score, disease) {
 
     if (error) {
 
-        alert('Error saving match');
+        alert(
+            'Error saving match'
+        );
 
     } else {
 
-        alert('✅ Match saved successfully');
+        alert(
+            '✅ Match saved successfully'
+        );
 
     }
 
@@ -36,42 +49,27 @@ async function saveMatch(title, nctId, score, disease) {
 
 async function findMatches() {
 
-    const disease  =
-        document.getElementById('patientDisease')
+    const disease =
+        document
+        .getElementById('patientDisease')
         .value
         .trim();
 
-    const age =
-        parseInt(
-            document.getElementById('patientAge').value
-        ) || null;
-
-    const location =
-        document.getElementById('patientLocation')
-        .value
-        .trim()
-        .toLowerCase();
-
-    const sex =
-        document.getElementById('patientSex').value;
-
     const resultsDiv =
-        document.getElementById('results');
-
-    const summaryDiv =
-        document.getElementById('summary');
+        document
+        .getElementById('results');
 
     if (!disease) {
 
-        alert('Please enter a disease');
+        alert(
+            'Please enter disease'
+        );
 
         return;
     }
 
     resultsDiv.innerHTML =
         '<p>⏳ Fetching trials...</p>';
-
-    summaryDiv.innerHTML = '';
 
     try {
 
@@ -81,7 +79,8 @@ async function findMatches() {
         const response =
             await fetch(url, {
                 headers: {
-                    "Accept": "application/json"
+                    "Accept":
+                    "application/json"
                 }
             });
 
@@ -91,7 +90,9 @@ async function findMatches() {
         const studies =
             data.studies || [];
 
-        if (studies.length === 0) {
+        if (
+            studies.length === 0
+        ) {
 
             resultsDiv.innerHTML =
                 '<p>No trials found.</p>';
@@ -99,251 +100,66 @@ async function findMatches() {
             return;
         }
 
-        const scored = studies.map(study => {
+        let html = '';
+
+        studies.forEach(study => {
 
             const info =
                 study.protocolSection
                 ?.identificationModule;
 
-            const statusMod =
-                study.protocolSection
-                ?.statusModule;
-
-            const eligibility =
-                study.protocolSection
-                ?.eligibilityModule;
-
-            const conditions =
-                study.protocolSection
-                ?.conditionsModule
-                ?.conditions || [];
-
-            const locations =
-                study.protocolSection
-                ?.contactsLocationsModule
-                ?.locations || [];
-
             const title =
-                info?.briefTitle || 'No Title';
+                info?.briefTitle
+                || 'No Title';
 
             const nctId =
-                info?.nctId || 'N/A';
+                info?.nctId
+                || 'N/A';
 
-            const status =
-                statusMod?.overallStatus || 'Unknown';
-
-            const minAge =
-                parseInt(
-                    eligibility?.minimumAge
-                ) || 0;
-
-            const maxAge =
-                parseInt(
-                    eligibility?.maximumAge
-                ) || 999;
-
-            const trialSex =
-                eligibility?.sex || 'ALL';
-
-            let score = 0;
-
-            let reasons = [];
-
-            const titleLower =
-                title.toLowerCase();
-
-            const conditionStr =
-                conditions.join(' ')
-                .toLowerCase();
-
-            const diseaseLower =
-                disease.toLowerCase();
+            let score = 50;
 
             if (
-                titleLower.includes(diseaseLower)
-                ||
-                conditionStr.includes(diseaseLower)
+                title
+                .toLowerCase()
+                .includes(
+                    disease.toLowerCase()
+                )
             ) {
 
-                score += 50;
-
-                reasons.push(
-                    '✅ Disease matches'
-                );
-
-            } else {
-
-                score += 10;
-
-                reasons.push(
-                    '⚠️ Partial disease match'
-                );
-
+                score = 95;
             }
-
-            if (status === 'RECRUITING') {
-
-                score += 20;
-
-                reasons.push(
-                    '✅ Recruiting'
-                );
-
-            }
-
-            if (age) {
-
-                if (
-                    age >= minAge
-                    &&
-                    age <= maxAge
-                ) {
-
-                    score += 20;
-
-                    reasons.push(
-                        '✅ Age eligible'
-                    );
-
-                } else {
-
-                    score -= 20;
-
-                    reasons.push(
-                        '❌ Age not eligible'
-                    );
-
-                }
-            }
-
-            if (
-                sex
-                &&
-                trialSex !== 'ALL'
-                &&
-                trialSex !== sex
-            ) {
-
-                score -= 30;
-
-                reasons.push(
-                    '❌ Sex not eligible'
-                );
-
-            } else if (sex) {
-
-                score += 10;
-
-                reasons.push(
-                    '✅ Sex eligible'
-                );
-
-            }
-
-            if (location) {
-
-                const locationMatch =
-                    locations.some(loc =>
-                        (loc.city || '')
-                        .toLowerCase()
-                        .includes(location)
-                    );
-
-                if (locationMatch) {
-
-                    score += 10;
-
-                    reasons.push(
-                        '✅ Location nearby'
-                    );
-
-                }
-            }
-
-            score =
-                Math.max(
-                    0,
-                    Math.min(100, score)
-                );
-
-            return {
-                title,
-                nctId,
-                status,
-                score,
-                reasons,
-                conditions
-            };
-
-        });
-
-        scored.sort(
-            (a, b) => b.score - a.score
-        );
-
-        summaryDiv.innerHTML = `
-            <div class="card">
-                <p>
-                    📊 Found
-                    <strong>${scored.length}</strong>
-                    trials
-                </p>
-            </div>
-        `;
-
-        let html = '';
-
-        scored.forEach(match => {
 
             html += `
+
                 <div class="card">
 
-                    <h3>${match.title}</h3>
+                    <h3>${title}</h3>
 
                     <p>
                         <strong>NCT ID:</strong>
-                        ${match.nctId}
+                        ${nctId}
                     </p>
 
                     <p>
-                        <strong>Status:</strong>
-                        ${match.status}
+                        <strong>AI Match Score:</strong>
+                        ${score}%
                     </p>
-
-                    <p>
-                        <strong>Match Score:</strong>
-                        ${match.score}%
-                    </p>
-
-                    <details>
-                        <summary>
-                            Why this score?
-                        </summary>
-
-                        <ul>
-                            ${match.reasons.map(
-                                r => `<li>${r}</li>`
-                            ).join('')}
-                        </ul>
-
-                    </details>
-
-                    <br>
 
                     <a href="
-https://clinicaltrials.gov/study/${match.nctId}
-" target="_blank">
+https://clinicaltrials.gov/study/${nctId}
+"
+target="_blank">
 
-                        View Full Trial →
+View Full Trial →
 
                     </a>
 
                     <br><br>
 
                     <button onclick="saveMatch(
-                        '${match.title.replace(/'/g, "")}',
-                        '${match.nctId}',
-                        ${match.score},
+                        '${title.replace(/'/g, "")}',
+                        '${nctId}',
+                        ${score},
                         '${disease}'
                     )">
 
@@ -359,11 +175,13 @@ https://clinicaltrials.gov/study/${match.nctId}
 
     } catch (err) {
 
-        resultsDiv.innerHTML =
-            `<p style="color:red">
-                ❌ Error: ${err.message}
-            </p>`;
+        resultsDiv.innerHTML = `
+            <p style="color:red">
+                ❌ Error:
+                ${err.message}
+            </p>
+        `;
     }
 }
 
-                </script>
+</script>
