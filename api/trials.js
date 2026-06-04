@@ -1,24 +1,36 @@
 export default async function handler(req, res) {
-
   const disease = req.query.disease || "diabetes";
 
   try {
-
     const response = await fetch(
-      `https://clinicaltrials.gov/api/query/studies?query.term=${encodeURIComponent(disease)}&pageSize=5`
+      `https://clinicaltrials.gov/api/v2/studies?query.term=${encodeURIComponent(disease)}&pageSize=5`,
+      {
+        headers: {
+          "Accept": "application/json",
+        },
+      }
     );
 
-    const text = await response.text();
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({
+        success: false,
+        error: `API responded with status ${response.status}`,
+        details: errorText,
+      });
+    }
 
-    res.status(200).send(text);
+    const data = await response.json();
 
-  } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      error: error.message
+    res.status(200).json({
+      success: true,
+      data,
     });
 
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
-
 }
