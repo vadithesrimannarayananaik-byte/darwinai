@@ -2,12 +2,23 @@ export default async function handler(req, res) {
 
   const disease = req.query.disease || "diabetes";
 
-  const response = await fetch(
-    `https://clinicaltrials.gov/api/query/study_fields?expr=${disease}&fields=BriefTitle,ConditionName,LocationCity,NCTId&min_rnk=1&max_rnk=5&fmt=json`
-  );
+  try {
 
-  const data = await response.json();
+    const response = await fetch(
+      `https://clinicaltrials.gov/api/query/study_fields?expr=${encodeURIComponent(disease)}&fields=NCTId,BriefTitle,Condition&min_rnk=1&max_rnk=5&fmt=json`
+    );
 
-  res.status(200).json(data);
+    const data = await response.json();
+
+    res.status(200).json(data);
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+
+  }
 
 }
