@@ -15,63 +15,179 @@
 
 <h1>🧠 AI Trial Matching</h1>
 
-<input type="text" id="patientDisease" placeholder="Enter patient disease">
-<button onclick="findMatches()">Find Matches</button>
+<div class="search-box">
+    <input type="text" id="patientDisease" placeholder="Disease (e.g. diabetes)">
+    <input type="number" id="patientAge" placeholder="Patient age">
+    <input type="text" id="patientLocation" placeholder="Location (e.g. New York)">
+    <select id="patientSex">
+        <option value="">Any Sex</option>
+        <option value="MALE">Male</option>
+        <option value="FEMALE">Female</option>
+    </select>
+    <button onclick="findMatches()">🔍 Find Matches</button>
+</div>
 
+<div id="summary"></div>
 <div id="results"></div>
 
 <script>
+async function findMatches() {
+    const disease  = document.getElementById('patientDisease').value.trim();
+    const age      = parseInt(document.getElementById('patientAge').value) || null;
+    const location = document.getElementById('patientLocation').value.trim().toLowerCase();
+    const sex      = document.getElementById('patientSex').value;
+    const resultsDiv = document.getElementById('results');
+    const summaryDiv = document.getElementById('summary');
 
-const trialDatabase = [
-    {
-        title: "Type 2 Diabetes Treatment Study",
-        disease: "diabetes"
-    },
-    {
-        title: "Cancer Immunotherapy Trial",
-        disease: "cancer"
-    },
-    {
-        title: "Heart Disease Prevention Study",
-        disease: "heart disease"
-    }
-];
+    if (!disease) { alert('Please enter a disease'); return; }
 
-function findMatches() {
+    resultsDiv.innerHTML = '<p>⏳ Fetching trials from ClinicalTrials.gov...</p>';
+    summaryDiv.innerHTML = '';
 
-    const patientDisease =
-        document.getElementById("patientDisease")
-        .value
-        .toLowerCase();
+    try {
+        // Fetch real trials
+        const url = `https://clinicaltrials.gov/api/v2/studies?query.term=${encodeURIComponent(disease)}&pageSize=10`;
+        const response = await fetch(url, { headers: { "Accept": "application/json" } });
+        const data = await response.json();
+        const studies = data.studies || [];
 
-    let html = "";
-
-    trialDatabase.forEach(trial => {
-
-        let score = 0;
-
-        if (
-            patientDisease.includes(trial.disease)
-            ||
-            trial.disease.includes(patientDisease)
-        ) {
-            score = 95;
-        } else {
-            score = 20;
+        if (studies.length === 0) {
+            resultsDiv.innerHTML = '<p>No trials found.</p>';
+            return;
         }
 
-        html += `
-            <div class="card">
-                <h3>${trial.title}</h3>
-                <p><strong>Disease:</strong> ${trial.disease}</p>
-                <p><strong>AI Match Score:</strong> ${score}%</p>
+        // Score each trial
+        const scored = studies.map(study => {
+            const info        = study.protocolSection?.identificationModule;
+            const statusMod   = study.protocolSection?.statusModule;
+            const eligibility = study.protocolSection?.eligibilityModule;
+            const conditions  = study.protocolSection?.conditionsModule?.conditions || [];
+            const locations   = study.protocolSection?.contactsLocationsModule?.locations || [];
+
+            const title     = info?.briefTitle || 'No Title';
+            const nctId     = info?.nctId || 'N/A';
+            const status    = statusMod?.overallStatus || 'Unknown';
+            const minAge    = parseInt(eligibility?.minimumAge) || 0;
+            const maxAge    = parseInt(eligibility?.maximumAge) || 999;
+            const trialSex  = eligibility?.sex || 'ALL';
+
+            let score = 0;
+            let reasons = [];
+
+            // Disease match (0-50)
+            const titleLower = title.toLowerCase();
+            const conditionStr = conditions.join(' ').toLowerCase();
+            const diseaseLower = disease.toLowerCase();
+
+            if (titleLower.includes(diseaseLower) || conditionStr.includes(diseaseLower)) {
+                score += 50;
+                reasons.push('✅ Disease matches');
+            } else {
+                score += 10;
+                reasons.push('⚠️ Partial disease match');
+            }
+
+            // Status (0-20)
+            if (status === 'RECRUITING') {
+                score += 20;
+                reasons.push('✅ Actively recruiting');
+            } else if (status === 'NOT_YET_RECRUITING') {
+                score += 10;
+                reasons.push('⏳ Opening soon');
+            } else {
+                reasons.push('❌ Not recruiting');
+            }
+
+            // Age (0-20)
+            if (age) {
+                if (age >= minAge && age <= maxAge) {
+                    score += 20;
+                    reasons.push('✅ Age eligible');
+                } else {
+                    score -= 20;
+                    reasons.push('❌ Age not eligible');
+                }
+            }
+
+            // Sex (0-10)
+            if (sex && trialSex !== 'ALL' && trialSex !== sex) {
+                score -= 30;
+                reasons.push('❌ Sex not eligible');
+            } else if (sex) {
+                score += 10;
+                reasons.push('✅ Sex eligible');
+            }
+
+            // Location (0-10)
+            if (location) {
+                const locationMatch = locations.some(loc =>
+                    (loc.city || '').toLowerCase().includes(location) ||
+                    (loc.state || '').toLowerCase().includes(location) ||
+                    (loc.country || '').toLowerCase().includes(location)
+                );
+                if (locationMatch) {
+                    score += 10;
+                    reasons.push('✅ Location nearby');
+                } else {
+                    reasons.push('📍 Location not listed');
+                }
+            }
+
+            score = Math.max(0, Math.min(100, score));
+
+            return { title, nctId, status, score, reasons, conditions };
+        });
+
+        // Sort by score
+        scored.sort((a, b) => b.score - a.score);
+
+        // Summary
+        const recruiting = scored.filter(s => s.status === 'RECRUITING').length;
+        const highMatch  = scored.filter(s => s.score >= 70).length;
+        summaryDiv.innerHTML = `
+            <div class="card" style="background:#f0f8ff">
+                <p>📊 Found <strong>${scored.length}</strong> trials &nbsp;|&nbsp;
+                   🟢 <strong>${recruiting}</strong> recruiting &nbsp;|&nbsp;
+                   🎯 <strong>${highMatch}</strong> high matches (70%+)</p>
             </div>
         `;
-    });
 
-    document.getElementById("results").innerHTML = html;
+        // Results
+        let html = '';
+        scored.forEach(match => {
+            const color = match.score >= 70 ? '#2e7d32' : match.score >= 40 ? '#e65100' : '#c62828';
+            const badge = match.score >= 70 ? '🟢 High Match' : match.score >= 40 ? '🟡 Possible Match' : '🔴 Low Match';
+
+            html += `
+                <div class="card">
+                    <h3>${match.title}</h3>
+                    <p><strong>NCT ID:</strong> ${match.nctId}</p>
+                    <p><strong>Status:</strong> ${match.status}</p>
+                    <p><strong>Conditions:</strong> ${match.conditions.join(', ') || 'N/A'}</p>
+                    <p><strong>Match Score:</strong>
+                        <span style="color:${color}; font-size:1.3em; font-weight:bold">
+                            ${match.score}% ${badge}
+                        </span>
+                    </p>
+                    <details>
+                        <summary>Why this score?</summary>
+                        <ul>
+                            ${match.reasons.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </details>
+                    <br>
+                    <a href="https://clinicaltrials.gov/study/${match.nctId}" 
+                       target="_blank">View Full Trial →</a>
+                </div>
+            `;
+        });
+
+        resultsDiv.innerHTML = html;
+
+    } catch (err) {
+        resultsDiv.innerHTML = `<p style="color:red">❌ Error: ${err.message}</p>`;
+    }
 }
-
 </script>
 
 </body>
