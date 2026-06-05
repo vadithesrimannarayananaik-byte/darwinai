@@ -1,0 +1,4 @@
+patient_id,age,gender,cancer_type,pathology_report
+P001,58,Female,Breast Cancer,"HER2: Positive. EGFR: Wild Type. ECOG 1. TNM Stage T2N1M0. Prior chemotherapy."
+P002,65,Male,Lung Cancer,"HER2: Negative. EGFR: Mutated. ECOG 2. TNM Stage T3N2M1. Prior immunotherapy."
+P003,49,Female,Colon Cancer,"HER2: Negative. EGFR: Wild Type. ECOG 0. TNM Stage T1N0M0. Prior radiation therapy."
