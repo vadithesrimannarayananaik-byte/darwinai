@@ -2,42 +2,57 @@ import pandas as pd
 import re
 import json
 
-# Load dataset
+# Load oncology dataset
 df = pd.read_csv(
-    "synthetic_oncology_patients.csv"
+    "../data/synthetic_oncology_patients.csv"
 )
 
-# Select first report
+# Select first pathology report
 report = df.iloc[0]["pathology_report"]
 
-print("===== PATHOLOGY REPORT =====")
+print("===== PATHOLOGY REPORT =====\n")
 print(report)
 
+# -----------------------------------
 # Extract TNM Stage
+# -----------------------------------
+
 tnm = re.search(
     r"T\dN\dM\d",
     report
 )
 
-# Extract ECOG
+# -----------------------------------
+# Extract ECOG Score
+# -----------------------------------
+
 ecog = re.search(
     r"ECOG.*?(\d)",
     report
 )
 
-# Extract HER2
+# -----------------------------------
+# Extract HER2 Status
+# -----------------------------------
+
 her2 = re.search(
     r"HER2:\s*(Positive|Negative)",
     report
 )
 
-# Extract EGFR
+# -----------------------------------
+# Extract EGFR Status
+# -----------------------------------
+
 egfr = re.search(
     r"EGFR:\s*(Mutated|Wild Type)",
     report
 )
 
-# Extract Treatments
+# -----------------------------------
+# Extract Prior Treatments
+# -----------------------------------
+
 treatments = []
 
 possible_treatments = [
@@ -51,10 +66,17 @@ possible_treatments = [
 report_lower = report.lower()
 
 for treatment in possible_treatments:
-    if treatment in report_lower:
-        treatments.append(treatment)
 
-# Build structured JSON
+    if treatment in report_lower:
+
+        treatments.append(
+            treatment
+        )
+
+# -----------------------------------
+# Create Structured JSON
+# -----------------------------------
+
 patient_json = {
 
     "TNM_Stage":
@@ -73,7 +95,11 @@ patient_json = {
     treatments
 }
 
-print("\n===== STRUCTURED PATIENT JSON =====")
+# -----------------------------------
+# Print Structured Data
+# -----------------------------------
+
+print("\n===== STRUCTURED PATIENT JSON =====\n")
 
 print(
     json.dumps(
